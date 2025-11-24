@@ -1,0 +1,6 @@
+framework module Pods_RoadsOfSpeed {
+  umbrella header "Pods-RoadsOfSpeed-umbrella.h"
+
+  export *
+  module * { export * }
+}
