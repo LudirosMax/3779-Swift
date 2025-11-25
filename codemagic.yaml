@@ -4,16 +4,16 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m1
     integrations:
-      app_store_connect: featherdot
+      app_store_connect: roadofspeed #назва ключа з код меджека, щось схоже на нейм апки
     environment:
       ios_signing:
         distribution_type: app_store
-        bundle_identifier: com.leshenproj.com
+        bundle_identifier: com.lavrykproj.app #тут бандл
       vars:
-        BUNDLE_ID: "com.leshenproj.com"
-        XCODE_WORKSPACE: "LastFeather.xcworkspace" # <-- Put the name of your Xcode workspace here
-        XCODE_SCHEME: "LastFeather" # <-- Put the name of your Xcode scheme here
-        APP_STORE_APPLE_ID: 6754966437
+        BUNDLE_ID: "com.lavrykproj.app" #тут бандл
+        XCODE_WORKSPACE: "RoadsOfSpeed.xcworkspace" # <-- Put the name of your Xcode workspace here
+        XCODE_SCHEME: "RoadsOfSpeed" # <-- Put the name of your Xcode scheme here
+        APP_STORE_APPLE_ID: 6755600019 #тут ід додатка в стор
       xcode: latest
       cocoapods: default
     scripts:
