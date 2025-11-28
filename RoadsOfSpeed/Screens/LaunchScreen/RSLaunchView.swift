@@ -1,27 +1,36 @@
 import SwiftUI
 
 struct RSLaunchView: View {
+    @AppStorage("firstOpenApp") var firstOpenApp = true
+    @AppStorage("stringURL") var stringURL = ""
     
+    @State private var pushAnswered = false
+    @State private var showPrivacy = false
+    @State private var showHome = false
+    @State private var minSplashDone = false
+    @State private var fired = false
+    @State private var minTimer: DispatchWorkItem?
     @State private var progress: CGFloat = 0.0
-    @State private var isActive = false
+    
+    private let minSplash: TimeInterval = 1.5
+    private let postConsentDelay: TimeInterval = 2.0
+    
+#if targetEnvironment(simulator)
+    private let isSimulator = true
+#else
+    private let isSimulator = false
+#endif
     
     var body: some View {
         NavigationView {
             VStack {
                 Spacer()
-                
                 loader
-                
-                NavigationLink(
-                    destination: RSHomeWebView(),
-                    isActive: $isActive
-                ) {
-                    EmptyView()
-                }
+                NavigationLink(destination: PrivacyView(), isActive: $showPrivacy) { EmptyView() }
+                NavigationLink(destination: RSHomeWebView(), isActive: $showHome) { EmptyView() }
             }
             .padding()
-            .frame(maxWidth: .infinity)
-            .frame(maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(
                 ZStack {
                     Color.white
@@ -31,20 +40,82 @@ struct RSLaunchView: View {
                         .ignoresSafeArea()
                 }
             )
-            .onAppear {
-                progress = 0
-                Timer.scheduledTimer(withTimeInterval: 0.03, repeats: true) { timer in
-                    if progress < 1 {
-                        progress += 0.01
-                    } else {
-                        timer.invalidate()
-                        isActive = true
-                    }
-                }
-            }
         }
         .navigationViewStyle(StackNavigationViewStyle())
         .hideNavigationBar()
+        .onAppear {
+            startMinSplash()
+            
+            NotificationCenter.default.addObserver(
+                forName: .pushPermissionGranted,
+                object: nil,
+                queue: .main
+            ) { _ in
+                pushAnswered = true
+                tryProceed()
+            }
+
+            NotificationCenter.default.addObserver(
+                forName: .pushPermissionDenied,
+                object: nil,
+                queue: .main
+            ) { _ in
+                pushAnswered = true
+                tryProceed()
+            }
+        }
+        .onDisappear {
+            NotificationCenter.default.removeObserver(self, name: .pushPermissionGranted, object: nil)
+            NotificationCenter.default.removeObserver(self, name: .pushPermissionDenied, object: nil)
+        }
+    }
+    
+    private func startMinSplash() {
+        progress = 0.0
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            withAnimation(.linear(duration: minSplash)) {
+                progress = 0.7
+            }
+        }
+
+        minTimer?.cancel()
+        let w = DispatchWorkItem {
+            minSplashDone = true
+            tryProceed()
+        }
+        minTimer = w
+        DispatchQueue.main.asyncAfter(deadline: .now() + minSplash, execute: w)
+    }
+
+    private func tryProceed() {
+        guard !fired else { return }
+
+        if isSimulator {
+            guard minSplashDone else { return }
+            animateToFullAndProceed()
+            return
+        }
+
+        guard minSplashDone, pushAnswered else { return }
+        animateToFullAndProceed()
+    }
+
+    private func animateToFullAndProceed() {
+        fired = true
+        withAnimation(.easeInOut(duration: postConsentDelay)) {
+            progress = 1.0
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + postConsentDelay) {
+            if !stringURL.isEmpty || firstOpenApp {
+                AppDelegate.orientationLock = [.portrait, .landscapeLeft, .landscapeRight]
+                showPrivacy = true
+            } else {
+                AppDelegate.orientationLock = .portrait
+                showHome = true
+            }
+        }
     }
 }
 

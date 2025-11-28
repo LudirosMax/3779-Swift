@@ -2,12 +2,15 @@ import SwiftUI
 import WebKit
 
 struct RSHomeWebView: View {
-    private let urlString = "https://3779-web-gl.vercel.app/"
+    private let urlString = "https://3779-web-gl-qdgr.vercel.app/"
 
     var body: some View {
         WebContainer(url: URL(string: urlString)!)
             .ignoresSafeArea(.all)
             .hideNavigationBar()
+            .onAppear {
+                AppDelegate.orientationLock = .landscape
+            }
     }
 }
 
